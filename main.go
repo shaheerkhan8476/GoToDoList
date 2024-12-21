@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"todo/routes/task"
 
 	"github.com/gorilla/mux"
+	"github.com/shaheerkhan8476/GoToDoList/routes/task"
 )
 
 func main() {
