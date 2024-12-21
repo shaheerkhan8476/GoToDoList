@@ -87,12 +87,28 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 		i++
 	}
 }
+
+func deleteTask(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	i := 0
+	for i < len(Tasks) {
+		fmt.Println(Tasks[i].Id.String())
+		if (Tasks[i].Id).String() == id {
+			Tasks = append(Tasks[:i], Tasks[i+1:]...)
+			w.WriteHeader(http.StatusOK)
+		}
+		i++
+	}
+}
+
 func main() {
 	m := mux.NewRouter()
 	m.HandleFunc("/addTask", addTask).Methods("POST")
 	m.HandleFunc("/editTask/{id}", editTask).Methods("PATCH")
 	m.HandleFunc("/getTasks", getTasks).Methods("GET")
 	m.HandleFunc("/getTasks/{id}", getTask).Methods("GET")
+	m.HandleFunc("/deleteTask/{id}", deleteTask).Methods("DELETE")
 	err := http.ListenAndServe(":8080", m)
 	if err != nil {
 		fmt.Println(err)
