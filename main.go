@@ -7,12 +7,13 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 type Task struct {
-	Name        string
-	Description string
-	Id          uuid.UUID
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Id          uuid.UUID `json:"id"`
 }
 
 func NewTask(name string, description string) Task {
@@ -26,54 +27,72 @@ func NewTask(name string, description string) Task {
 var Tasks []Task = []Task{}
 
 func addTask(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "POST":
-		var newTask Task
-		bodyBytes, _ := io.ReadAll(r.Body)
-		err := json.Unmarshal(bodyBytes, &newTask)
-		if err != nil {
-			fmt.Println(err)
-		}
-		taskCreate := NewTask(newTask.Name, newTask.Description)
-		Tasks = append(Tasks, taskCreate)
-	case "GET":
-		b, err := json.Marshal(Tasks)
-		if err != nil {
-			fmt.Println(err)
-		}
-		w.Write(b)
-
+	var newTask Task
+	bodyBytes, _ := io.ReadAll(r.Body)
+	err := json.Unmarshal(bodyBytes, &newTask)
+	if err != nil {
+		fmt.Println(err)
 	}
+	taskCreate := NewTask(newTask.Name, newTask.Description)
+	Tasks = append(Tasks, taskCreate)
 	w.WriteHeader(http.StatusOK)
 }
 
 func editTask(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "POST":
-		var currentTask Task
-		bodyBytes, _ := io.ReadAll(r.Body)
-		err := json.Unmarshal(bodyBytes, &currentTask)
-		if err != nil {
-			fmt.Println(err)
-		}
-		i := 1
-		for i <= len(Tasks) {
-			if (Tasks[i].Id) == currentTask.Id {
-				Tasks[i].Name = currentTask.Name
-				Tasks[i].Description = currentTask.Description
-				w.WriteHeader(http.StatusOK)
-				return
-			}
-		}
-		w.WriteHeader(http.StatusNotModified)
+	vars := mux.Vars(r)
+	id := vars["id"]
+	var currentTask Task
+	bodyBytes, _ := io.ReadAll(r.Body)
+	err := json.Unmarshal(bodyBytes, &currentTask)
+	if err != nil {
+		fmt.Println(err)
 	}
-
+	i := 0
+	for i <= len(Tasks) {
+		if (Tasks[i].Id.String()) == id {
+			Tasks[i].Name = currentTask.Name
+			Tasks[i].Description = currentTask.Description
+			b, err := json.Marshal(Tasks[i])
+			if err != nil {
+				fmt.Println(err)
+			}
+			w.Write(b)
+			return
+		}
+		i++
+	}
 }
 
+func getTasks(w http.ResponseWriter, r *http.Request) {
+	b, err := json.Marshal(Tasks)
+	if err != nil {
+		fmt.Println(err)
+	}
+	w.Write(b)
+}
+func getTask(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	i := 0
+	for i < len(Tasks) {
+		fmt.Println(Tasks[i].Id.String())
+		if (Tasks[i].Id).String() == id {
+			b, err := json.Marshal(Tasks[i])
+			if err != nil {
+				fmt.Println(err)
+			}
+			w.Write(b)
+			return
+		}
+		i++
+	}
+}
 func main() {
-	m := http.NewServeMux()
-	m.HandleFunc("/addTask", addTask)
-	m.HandleFunc("/editTask", editTask)
+	m := mux.NewRouter()
+	m.HandleFunc("/addTask", addTask).Methods("POST")
+	m.HandleFunc("/editTask/{id}", editTask).Methods("PATCH")
+	m.HandleFunc("/getTasks", getTasks).Methods("GET")
+	m.HandleFunc("/getTasks/{id}", getTask).Methods("GET")
 	err := http.ListenAndServe(":8080", m)
 	if err != nil {
 		fmt.Println(err)
