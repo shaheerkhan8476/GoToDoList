@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -18,8 +19,8 @@ func AddTask(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	taskCreate := NewTask(newTask.Name, newTask.Description)
-	Tasks = append(Tasks, taskCreate)
+	newTask.Id = uuid.New()
+	Tasks = append(Tasks, newTask)
 	w.WriteHeader(http.StatusOK)
 }
 
